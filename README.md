@@ -1,1 +1,20 @@
 # Training_OF_verificationAndValidation_tutorials
+
+July 12, 2025　オープンCAE勉強会＠富山
+ミニ講習「OpenFOAMのV&V標準例題の理解に挑戦（標準例題を読み解こう02）」
+
+OpenFOAMのV&V例題の実行と解読：注意事項
+20250712ShortSeminar_OpenFOAM_VandV_ImportantNotes.md
+
+OpenFOAMのV&V例題の実行と解読：概要
+20250712ShortSeminar_OpenFOAM_VandV_Overview.md
+
+OpenFOAMのV&V例題の実行と解読：schemes/divergenceExample
+20250712ShortSeminar_OpenFOAM_VandV_divergenceExample.md
+
+gnuplot関連メモ
+20250712ShortSeminar_OpenFOAM_VandV_gnuplot_memo.md
+
+Allrunスクリプト概説：schemes/divergenceExample, nonOrthogonalChannel
+20250712ShortSeminar_OpenFOAM_VandV_Allrun_supplement.pdf
+

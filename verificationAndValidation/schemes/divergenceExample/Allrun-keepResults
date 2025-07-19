@@ -1,0 +1,48 @@
+#!/bin/bash
+cd "${0%/*}" || exit                                # Run from this directory
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+#------------------------------------------------------------------------------
+
+# Save the line plot
+unset savePlots
+
+if notTest "$@"
+then
+    savePlots=true
+    
+    if [ ! -d "results" ]
+    then
+        mkdir results
+    fi
+fi
+
+restore0Dir
+
+runApplication blockMesh
+
+while read -r scheme
+do
+    echo "Updating fvSchemes to use $scheme"
+    sed "s/DIVSCHEME/$scheme/g" system/fvSchemes.template > system/fvSchemes
+
+    # Create a sanitised name for the scheme - remove 'special' characters
+    schemeTag=$(sed -e 's# #_#g#' -e 's#[.()]##g' <<< "$scheme")
+    dirResult="results/$schemeTag"
+
+    runApplication -s "${schemeTag}" scalarTransportFoam
+
+    if [ "$savePlots" = true ]
+    then
+        # Save the line plot
+        mv -f postProcessing/sample1/100/line1_T.xy line1_T_"${schemeTag}".xy
+
+        # Keep calc results
+        mkdir $dirResult
+        cp -Rf 100 $dirResult
+        ln -s ../../system "$dirResult"/system
+        ln -s ../../constant "$dirResult"/constant
+    fi
+
+done < system/schemesToTest
+
+#------------------------------------------------------------------------------

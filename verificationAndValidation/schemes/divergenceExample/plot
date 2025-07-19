@@ -1,0 +1,125 @@
+#!/bin/bash
+cd "${0%/*}" || exit                                # Run from this directory
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+#------------------------------------------------------------------------------
+
+# Save the line plot
+unset savePlots
+
+if notTest "$@"
+then
+    savePlots=true
+fi
+
+# read system/schemesToTest file and create setups
+setups=""
+images=""
+while read -r scheme
+do
+    # Create a sanitised name for the scheme - remove 'special' characters
+    schemeTag=$(sed -e 's# #_#g#' -e 's#[.()]##g' <<< "$scheme")
+
+    if [ "$savePlots" = true ]
+    then
+        setups="$setups $schemeTag"
+        #echo "updated setup is $setups"
+
+        images="$images line1_T_$schemeTag.png"
+    fi
+
+done < system/schemesToTest
+
+
+plot_distance_vs_T_all_setups(){
+    setups=$@
+
+    n=0
+    for setup in $setups
+    do
+        sampleFiles[$n]="line1_T_$setup.xy"
+        #echo "${sampleFiles[$n]}"   
+        n=$(($n+1))
+    done
+
+    image="all_setups_line1_T.png"
+
+    gnuplot<<PLT_D_VS_T_ALL_SETUPS
+    set terminal pngcairo font "helvetica,20" size 800, 800
+
+    array linecolors[10] = \
+        ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", \
+         "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
+    
+    set for [i=1:10] style line i lw 2 lc rgb linecolors[i]
+    set for [i=1:10] style line 10+i lw 2 lc rgb linecolors[i] dt "--"
+
+    set grid
+    #set xrange [0:200]
+    #set yrange [0:20]
+    #set logscale x
+    #set key left top reverse
+    set key samplen 2
+    #set key spacing 0.75
+    set key noenhance
+    set xlabel "distance [m]"
+    set ylabel "T [K]"
+    set output "$image"
+    set title "distance vs T" noenhanced
+
+    # OpenFOAM - Numerical
+        models="${setups[*]}"
+        samples="${sampleFiles[*]}"
+
+    plot \
+        for [i=1:words(samples)] word(samples, i) \
+            u (\$1):(\$2) \
+            t word(models, i) w l linestyle i
+            #t word(models, i) w l lw 2
+PLT_D_VS_T_ALL_SETUPS
+
+}
+
+
+plot_distance_vs_T(){
+    setup=$@
+
+    sampleFile="line1_T_$setup.xy"
+    image="line1_T_$setup.png"
+
+    gnuplot<<PLT_D_VS_T
+    set terminal pngcairo font "helvetica,20" size 800, 800
+    set grid
+    #set xrange [0:200]
+    set yrange [-0.2:1.2]
+    #set logscale x
+    #set key left top reverse
+    set key samplen 2
+    #set key spacing 0.75
+    set key noenhance
+    set xlabel "distance [m]"
+    set ylabel "T [K]"
+    set output "$image"
+    set title "distance vs T" noenhanced
+
+    plot \
+        "$sampleFile" \
+        u (\$1):(\$2) \
+        t "$setup" w l lw 2
+PLT_D_VS_T
+
+}
+
+for setup in $setups
+do
+    echo "# Plots for the setup: $setup"
+    plot_distance_vs_T $setup
+done
+
+echo "# Plots for setups: $setups"
+plot_distance_vs_T_all_setups $setups
+
+montage \
+    $images \
+    -tile 5x3 -geometry 240x240 \
+    megedImg.png
+#------------------------------------------------------------------------------
